@@ -1,0 +1,20 @@
+spring:
+  ai:
+    mcp:
+      client:
+        stdio:
+          root-change-notification: true
+          connections:
+            server1:
+              command: /path/to/server
+              args:
+                - --port=8080
+                - --mode=production
+              env:
+                API_KEY: your-api-key
+                DEBUG: "true"
+        sse:
+          connections:
+            server1:
+              url: http://otherserver:8081
+              sse-endpoint: /custom-sse
