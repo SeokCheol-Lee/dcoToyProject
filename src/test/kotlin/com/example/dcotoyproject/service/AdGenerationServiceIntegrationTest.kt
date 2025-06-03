@@ -3,10 +3,12 @@ package com.example.dcotoyproject.service
 import com.example.dcotoyproject.domain.AdCreativeDetails
 import com.example.dcotoyproject.repository.AdCreativeDetailsRepository
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
-import org.springframework.ai.chat.client.ChatClient
-import org.springframework.ai.chat.client.RequestResponseSpec
+import org.springframework.ai.chat.ChatResponse
+import org.springframework.ai.chat.Generation
+import org.springframework.ai.chat.model.ChatModel
 import org.springframework.ai.chat.prompt.Prompt
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -22,31 +24,34 @@ class AdGenerationServiceIntegrationTest {
     private lateinit var adCreativeDetailsRepository: AdCreativeDetailsRepository
 
     @MockBean
-    private lateinit var chatClient: ChatClient
+    private lateinit var chatModel: ChatModel
 
-    @MockBean
-    private lateinit var requestResponseSpec: RequestResponseSpec
-
+    @AfterEach
+    fun tearDown() {
+        // Clean up database after each test
+        adCreativeDetailsRepository.deleteAll()
+    }
 
     @Test
     fun `testGenerateAdHtml_success`() {
         val testPrompt = "test prompt for a new amazing product"
-        val mockHtmlResponse = "<div><p>Amazing Product Ad!</p></div>"
+        val mockOutputText = "<div><p>Amazing Product Ad!</p></div>"
 
-        // Mock the fluent API chain for ChatClient
-        Mockito.`when`(chatClient.prompt(Mockito.any(Prompt::class.java))).thenReturn(requestResponseSpec)
-        Mockito.`when`(requestResponseSpec.call()).thenReturn(requestResponseSpec)
-        Mockito.`when`(requestResponseSpec.content()).thenReturn(mockHtmlResponse)
+        val mockGeneration = Generation(mockOutputText)
+        val mockChatResponse = ChatResponse(listOf(mockGeneration))
+
+        Mockito.`when`(chatModel.call(Mockito.any(Prompt::class.java)))
+            .thenReturn(mockChatResponse)
 
         val generatedHtml = adGenerationService.generateAdHtml(testPrompt)
 
-        assertThat(generatedHtml).isEqualTo(mockHtmlResponse)
+        assertThat(generatedHtml).isEqualTo(mockOutputText)
 
         val savedEntities = adCreativeDetailsRepository.findAll()
         assertThat(savedEntities).hasSize(1)
         val savedEntity = savedEntities.first()
 
         assertThat(savedEntity.promptText).isEqualTo(testPrompt)
-        assertThat(savedEntity.generatedHtml).isEqualTo(mockHtmlResponse)
+        assertThat(savedEntity.generatedHtml).isEqualTo(mockOutputText)
     }
 }

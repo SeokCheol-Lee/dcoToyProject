@@ -1,13 +1,13 @@
 package com.example.dcotoyproject.service
 
 import com.example.dcotoyproject.domain.AdCreativeDetails
-import org.springframework.ai.chat.client.ChatClient
+import org.springframework.ai.chat.model.ChatModel
 import org.springframework.ai.chat.prompt.Prompt
 import org.springframework.stereotype.Service
 
 @Service
 class AdGenerationService(
-    private val chatClient: ChatClient,
+    private val chatModel: ChatModel,
     private val adDataService: AdDataService
 ) {
 
@@ -16,19 +16,21 @@ class AdGenerationService(
         // Save initial prompt
         creativeDetails = adDataService.saveCreativeDetails(creativeDetails)
 
-        val llmPrompt = """
+        val llmPromptContent = """
             You are an expert advertising copywriter.
             Create a compelling HTML snippet for an advertisement based on the following concept:
-            '$promptText'.
+            '${creativeDetails.promptText}'.
             The HTML should be a single div, suitable for embedding directly onto a webpage.
             Provide only the HTML content, without any surrounding text or explanations.
         """.trimIndent()
 
-        val response = chatClient.prompt(Prompt(llmPrompt)).call().content()
+        val fullPrompt = Prompt(llmPromptContent)
+        val chatResponse = chatModel.call(fullPrompt)
+        val generatedHtmlContent = chatResponse.result.output.content
 
-        creativeDetails.generatedHtml = response
+        creativeDetails.generatedHtml = generatedHtmlContent
         adDataService.saveCreativeDetails(creativeDetails)
 
-        return response ?: "<p>Error generating ad content.</p>"
+        return generatedHtmlContent ?: "<p>Error generating ad content.</p>"
     }
 }
