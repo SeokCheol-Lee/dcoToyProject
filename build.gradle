@@ -37,6 +37,7 @@ dependencies {
 	implementation platform("org.springframework.ai:spring-ai-bom:1.0.0")
 	// Replace the following with the starter dependencies of specific modules you wish to use
 	implementation 'org.springframework.ai:spring-ai-openai'
+	runtimeOnly 'com.h2database:h2'
 }
 
 kotlin {
